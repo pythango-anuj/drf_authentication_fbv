@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view,permission_classes
-from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.permissions import AllowAny,IsAuthenticated,IsAdminUser
 from rest_framework.response import Response
 from rest_framework.validators import ValidationError
 from rest_framework import status
@@ -13,19 +13,24 @@ import json
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-'''
-test_param = openapi.Parameter('Authentication', description="Send Authentication Details", type=openapi.TYPE_OBJECT)
-user_response = openapi.Response('response description', CustomUserSerializer)
 
-# 'method' can be used to customize a single HTTP method of a view
-@swagger_auto_schema(method=['GET'], manual_parameters=[test_param], responses={200: user_response})
-
-# 'methods' can be used to apply the same modification to multiple methods
-@swagger_auto_schema(methods=['POST'], request_body=CustomUserSerializer)
-'''
 # CUSTOM AUTHENTICATION THROUGH FUNCTION BASED VIEWS:
 
-# Reigistering a CustomUser manually:
+# To list all the Registered Users:
+@swagger_auto_schema(method=['GET'])
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def all_users(request):
+    users = CustomUser.objects.all()
+    data = CustomUserSerializer(users, many=True).data
+    if data:
+        return Response(data=data)
+    else:
+        data = dict()
+        data['message'] = "No Registered user available !!"
+        return Response(data=data)
+
+# Registering a CustomUser manually:
 @swagger_auto_schema(method='POST', request_body=openapi.Schema(
     type=openapi.TYPE_OBJECT,
     properties={
@@ -37,8 +42,7 @@ user_response = openapi.Response('response description', CustomUserSerializer)
         'phone_no': openapi.Schema(type=openapi.TYPE_STRING, description='Phone No'),
         'address': openapi.Schema(type=openapi.TYPE_STRING, description='Address'),
         'is_staff': openapi.Schema(type=openapi.TYPE_STRING, description='Staff Status'),
-    },
-    tags=['Registration API']
+    }
 ))
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -74,6 +78,7 @@ def register_user(request):
         'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username'),
         'password': openapi.Schema(type=openapi.TYPE_STRING, description='Password'),
     }
+
 ))
 @api_view(["POST"])
 @permission_classes([AllowAny])
